@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="10"
+      xmlns:fx="http://javafx.com/fxml/1"
+      xmlns="http://javafx.com/javafx/21"
+      fx:controller="is.hi.messagee2efront.ui.controller.ConversationController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label fx:id="conversationTitleLabel" text="Conversation"/>
+
+    <HBox spacing="10">
+        <Button text="Back" onAction="#onBackClick"/>
+        <Button text="Refresh" onAction="#onRefreshClick"/>
+    </HBox>
+
+    <ListView fx:id="messageListView" prefHeight="400.0"/>
+
+    <Label fx:id="statusLabel"/>
+</VBox>
