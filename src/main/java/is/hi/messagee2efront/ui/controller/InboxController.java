@@ -3,6 +3,7 @@ package is.hi.messagee2efront.ui.controller;
 import is.hi.messagee2efront.model.response.ConversationSummaryResponse;
 import is.hi.messagee2efront.model.response.MessageResponse;
 import is.hi.messagee2efront.service.MessageService;
+import is.hi.messagee2efront.service.SessionStorage;
 import is.hi.messagee2efront.service.TokenStorage;
 import is.hi.messagee2efront.ui.MessageE2EApplication;
 import javafx.application.Platform;
@@ -65,6 +66,7 @@ public class InboxController {
     @FXML
     public void onLogoutClick() {
         TokenStorage.setToken(null);
+        SessionStorage.clear();
 
         try{
             FXMLLoader loader = new FXMLLoader(
