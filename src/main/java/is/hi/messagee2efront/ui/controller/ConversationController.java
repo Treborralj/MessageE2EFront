@@ -1,18 +1,31 @@
 package is.hi.messagee2efront.ui.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import is.hi.messagee2efront.model.DecryptedMessageViewModel;
+import is.hi.messagee2efront.model.EncryptedMessagePayload;
+import is.hi.messagee2efront.model.request.SendMessageRequest;
 import is.hi.messagee2efront.model.response.MessageResponse;
+import is.hi.messagee2efront.model.response.PublicKeyResponse;
+import is.hi.messagee2efront.service.CryptoService;
 import is.hi.messagee2efront.service.MessageService;
+import is.hi.messagee2efront.service.SessionStorage;
 import is.hi.messagee2efront.ui.MessageE2EApplication;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import javax.crypto.SecretKey;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /******************************************************************************
@@ -27,10 +40,51 @@ public class ConversationController {
     @FXML
     public Label statusLabel;
     @FXML
-    public ListView<MessageResponse> messageListView;
-
+    public ListView<DecryptedMessageViewModel> messageListView;
+    @FXML
+    public TextField messageInputField;
+    @FXML
+    public Button sendButton;
     private final MessageService messageService = new MessageService();
+    private final CryptoService cryptoService = new CryptoService();
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private String otherUsersUsername;
+
+    @FXML
+    public void initialize(){
+        messageListView.setCellFactory(listView -> new ListCell<>(){
+            @Override
+            protected void updateItem(DecryptedMessageViewModel item, boolean empty){
+                super.updateItem(item, empty);
+                if(empty || item == null){
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+                Label textLabel = new Label(item.getPlaintext());
+                textLabel.setWrapText(true);
+
+                Label timeLabel = new Label(item.getFormattedTime());
+
+                VBox bubble = new VBox(textLabel, timeLabel);
+                bubble.setSpacing(3);
+                bubble.setMaxWidth(350);
+
+                HBox wrapper = new HBox(bubble);
+
+                if (item.isSentByCurrentUser()) {
+                    wrapper.setStyle("-fx-alignment: CENTER-RIGHT;");
+                    bubble.setStyle("-fx-background-color: lightblue; -fx-padding: 8; -fx-background-radius: 8;");
+                } else {
+                    wrapper.setStyle("-fx-alignment: CENTER-LEFT;");
+                    bubble.setStyle("-fx-background-color: lightgray; -fx-padding: 8; -fx-background-radius: 8;");
+                }
+
+                setText(null);
+                setGraphic(wrapper);
+            }
+        });
+    }
 
     public void setOtherUsersUsername(String otherUsersUsername){
         this.otherUsersUsername = otherUsersUsername;
@@ -59,20 +113,95 @@ public class ConversationController {
         loadConversation();
     }
 
+    @FXML
+    public void onSendClick() {
+        String plaintext = messageInputField.getText();
+
+        if(plaintext == null || plaintext.isBlank()){
+            statusLabel.setText("Message cannot be empty");
+            return;
+        }
+        sendButton.setDisable(true);
+        statusLabel.setText("Sending message...");
+
+        new Thread(() -> {
+            try {
+                PublicKeyResponse publicKeyResponse = messageService.getPublicKey(otherUsersUsername);
+                PublicKey recipientPublicKey = cryptoService.parsePublicKey(publicKeyResponse.getPublicKey());
+                SecretKey aesKey = cryptoService.generateAesKey();
+                byte[] iv = cryptoService.generateIv();
+
+                String ciphertext = cryptoService.encryptPlainText(plaintext, aesKey, iv);
+                String encryptedAesKey = cryptoService.encryptAesKey(aesKey, recipientPublicKey);
+                String ivBase64 = cryptoService.encodeBase64(iv);
+                EncryptedMessagePayload payload = new EncryptedMessagePayload(
+                        encryptedAesKey,
+                        ivBase64,
+                        ciphertext
+                );
+
+                String payloadJson = objectMapper.writeValueAsString(payload);
+                SendMessageRequest request = new SendMessageRequest(otherUsersUsername, payloadJson);
+
+                messageService.sendMessage(request);
+                Platform.runLater(() -> {
+                    messageInputField.clear();
+                    sendButton.setDisable(false);
+                    statusLabel.setText("Message sent.");
+                    loadConversation();
+                });
+            } catch(Exception e){
+                Platform.runLater(() -> {
+                    sendButton.setDisable(false);
+                    statusLabel.setText("Failed to send message.");
+                });
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
     private void loadConversation(){
         statusLabel.setText("Loading conversation...");
 
         new Thread(() -> {
             try{
                 List<MessageResponse> messages = messageService.getConversation(otherUsersUsername);
+                List<DecryptedMessageViewModel> decryptedMessages = new ArrayList<>();
+
+                String currentUsername = SessionStorage.getUsername();
+                PrivateKey privateKey = SessionStorage.getPrivateKey();
+
+                for(MessageResponse message : messages){
+                    EncryptedMessagePayload payload = objectMapper.readValue(
+                            message.getEncryptedContent(),
+                            EncryptedMessagePayload.class
+                    );
+
+                    SecretKey aesKey = cryptoService.decryptAesKey(payload.getEncryptedAesKey(), privateKey);
+                    byte[] iv = cryptoService.decodeBase64(payload.getIv());
+                    String plaintext = cryptoService.decryptCipherText(payload.getCiphertext(), aesKey, iv);
+
+                    boolean sentByCurrentUser = message.getSenderUsername().equals(currentUsername);
+                    decryptedMessages.add(new DecryptedMessageViewModel(
+                            message.getSenderUsername(),
+                            plaintext,
+                            formatSentAt(message.getSentAt()),
+                            sentByCurrentUser
+                    ));
+                }
 
                 Platform.runLater(() -> {
-                    messageListView.setItems(FXCollections.observableArrayList(messages));
+                    messageListView.setItems(FXCollections.observableArrayList(decryptedMessages));
                     statusLabel.setText("Loaded " + messages.size() + " messages.");
                 });
             }catch (Exception e){
                 Platform.runLater(() -> statusLabel.setText("Failed to load conversation."));
             }
         }).start();
+    }
+    private String formatSentAt(String sentAt) {
+        LocalDateTime dateTime = LocalDateTime.parse(sentAt);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM HH:mm");
+        return dateTime.format(formatter);
     }
 }

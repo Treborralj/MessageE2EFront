@@ -3,6 +3,8 @@ package is.hi.messagee2efront.ui.controller;
 import is.hi.messagee2efront.model.request.LoginRequest;
 import is.hi.messagee2efront.model.response.AuthenticationResponse;
 import is.hi.messagee2efront.service.AuthService;
+import is.hi.messagee2efront.service.KeyStorageService;
+import is.hi.messagee2efront.service.SessionStorage;
 import is.hi.messagee2efront.service.TokenStorage;
 import is.hi.messagee2efront.ui.MessageE2EApplication;
 import javafx.application.Platform;
@@ -25,6 +27,7 @@ public class LoginController {
     private final AuthService authService = new AuthService();
     @FXML
     public Button loginButton;
+    private final KeyStorageService keyStorageService = new KeyStorageService();
 
     @FXML
     protected void onLoginClick() {
@@ -45,6 +48,8 @@ public class LoginController {
 
                 Platform.runLater(() -> {
                     TokenStorage.setToken(response.getToken());
+                    SessionStorage.setUsername(username);
+                    SessionStorage.setPrivateKey(keyStorageService.loadPrivateKey(username, password));
                     loginButton.setDisable(false);
                     goToInboxPage();
                 });

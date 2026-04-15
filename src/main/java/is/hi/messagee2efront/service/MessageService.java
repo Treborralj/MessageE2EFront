@@ -2,8 +2,10 @@ package is.hi.messagee2efront.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import is.hi.messagee2efront.model.request.SendMessageRequest;
 import is.hi.messagee2efront.model.response.ConversationSummaryResponse;
 import is.hi.messagee2efront.model.response.MessageResponse;
+import is.hi.messagee2efront.model.response.PublicKeyResponse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -69,9 +71,55 @@ public class MessageService {
                 .send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
 
         if(response.statusCode() == 200){
-            return  objectMapper.readValue(response.body(), new TypeReference<List<MessageResponse>>(){});
+            return objectMapper.readValue(response.body(), new TypeReference<List<MessageResponse>>(){});
         } else{
             throw new RuntimeException("Fetching conversation failed. Status code: " + response.statusCode());
         }
+    }
+
+    public void sendMessage(SendMessageRequest requestBodyObject) throws IOException, InterruptedException{
+        String token = TokenStorage.getToken();
+        String requestBody = objectMapper.writeValueAsString(requestBodyObject);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(ApiClient.getBaseUrl() + "/message/send"))
+                .timeout(Duration.ofSeconds(15))
+                .header("Content-Type", "application/json; charset=UTF-8")
+                .header("Accept", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .header("User-Agent", "JavaFX-MessageE2E-Client")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> response = ApiClient.getHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        if(response.statusCode() != 200){
+            throw new RuntimeException("Sending message failed. Status code: " + response.statusCode());
+        }
+    }
+
+    public PublicKeyResponse getPublicKey(String username) throws IOException, InterruptedException{
+        String token = TokenStorage.getToken();
+        String encodedUsername = URLEncoder.encode(username, StandardCharsets.UTF_8);
+
+        HttpRequest request =HttpRequest.newBuilder()
+                .uri(URI.create(ApiClient.getBaseUrl() + "/user/public-key/" + encodedUsername))
+                .timeout(Duration.ofSeconds(15))
+                .header("Accept", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .header("User-Agent", "JavaFX-MessageE2E-Client")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = ApiClient.getHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        if(response.statusCode() == 200){
+            return objectMapper.readValue(response.body(), PublicKeyResponse.class);
+        } else {
+            throw new RuntimeException("Fetching public key failed. Status code: " + response.statusCode());
+        }
+
     }
 }
