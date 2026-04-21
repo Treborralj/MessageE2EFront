@@ -45,6 +45,7 @@ public class LoginController {
             try{
                 LoginRequest request = new LoginRequest(username, password);
                 AuthenticationResponse response = authService.login(request);
+                System.out.println("Token: " + response.getToken());
 
                 Platform.runLater(() -> {
                     TokenStorage.setToken(response.getToken());

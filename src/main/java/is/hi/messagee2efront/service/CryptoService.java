@@ -43,7 +43,7 @@ public class CryptoService {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, aesKey, new GCMParameterSpec(128, iv));
             byte[] encrypted = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(encrypted);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(encrypted);
         } catch(Exception e){
             throw new RuntimeException("Failed to encrypt plaintext");
         }
@@ -53,7 +53,7 @@ public class CryptoService {
         try{
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, aesKey, new GCMParameterSpec(128, iv));
-            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(ciphertext));
+            byte[] decrypted = cipher.doFinal(Base64.getUrlDecoder().decode(ciphertext));
             return new String(decrypted, StandardCharsets.UTF_8);
         } catch(Exception e){
             throw new RuntimeException("Failed to decrypt ciphertext", e);
@@ -65,7 +65,7 @@ public class CryptoService {
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             byte[] encrypted = cipher.doFinal(aesKey.getEncoded());
-            return Base64.getEncoder().encodeToString(encrypted);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(encrypted);
         } catch (Exception e){
             throw new RuntimeException("Failed to encrypt AES key", e);
         }
@@ -75,7 +75,7 @@ public class CryptoService {
         try{
             Cipher cipher = Cipher.getInstance("RSA");
             cipher.init(Cipher.DECRYPT_MODE, privatekey);
-            byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(encryptedAesKey));
+            byte[] decrypted = cipher.doFinal(Base64.getUrlDecoder().decode(encryptedAesKey));
             return new SecretKeySpec(decrypted, "AES");
         } catch(Exception e){
             throw new RuntimeException("Failed to decrypt AES key", e);
@@ -94,10 +94,10 @@ public class CryptoService {
     }
 
     public String encodeBase64(byte[] bytes) {
-        return Base64.getEncoder().encodeToString(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     public byte[] decodeBase64(String base64) {
-        return Base64.getDecoder().decode(base64);
+        return Base64.getUrlDecoder().decode(base64);
     }
 }

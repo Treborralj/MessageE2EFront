@@ -7,25 +7,38 @@ package is.hi.messagee2efront.model;
  *
  *****************************************************************************/
 public class EncryptedMessagePayload {
-    private String encryptedAesKey;
+    private String encryptedAesKeyForSender;
+    private String encryptedAesKeyForReceiver;
     private String iv;
     private String ciphertext;
 
     public EncryptedMessagePayload() {
     }
 
-    public EncryptedMessagePayload(String encryptedAesKey, String iv, String ciphertext) {
-        this.encryptedAesKey = encryptedAesKey;
+    public EncryptedMessagePayload(String encryptedAesKeyForSender,
+                                   String encryptedAesKeyForReceiver,
+                                   String iv,
+                                   String ciphertext) {
+        this.encryptedAesKeyForSender = encryptedAesKeyForSender;
+        this.encryptedAesKeyForReceiver = encryptedAesKeyForReceiver;
         this.iv = iv;
         this.ciphertext = ciphertext;
     }
 
-    public String getEncryptedAesKey() {
-        return encryptedAesKey;
+    public String getEncryptedAesKeyForSender() {
+        return encryptedAesKeyForSender;
     }
 
-    public void setEncryptedAesKey(String encryptedAesKey) {
-        this.encryptedAesKey = encryptedAesKey;
+    public void setEncryptedAesKeyForSender(String encryptedAesKeyForSender) {
+        this.encryptedAesKeyForSender = encryptedAesKeyForSender;
+    }
+
+    public String getEncryptedAesKeyForReceiver() {
+        return encryptedAesKeyForReceiver;
+    }
+
+    public void setEncryptedAesKeyForReceiver(String encryptedAesKeyForReceiver) {
+        this.encryptedAesKeyForReceiver = encryptedAesKeyForReceiver;
     }
 
     public String getIv() {

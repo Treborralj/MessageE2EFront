@@ -45,22 +45,26 @@ public class ConversationController {
     public TextField messageInputField;
     @FXML
     public Button sendButton;
+
     private final MessageService messageService = new MessageService();
     private final CryptoService cryptoService = new CryptoService();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
     private String otherUsersUsername;
 
     @FXML
-    public void initialize(){
-        messageListView.setCellFactory(listView -> new ListCell<>(){
+    public void initialize() {
+        messageListView.setCellFactory(listView -> new ListCell<>() {
             @Override
-            protected void updateItem(DecryptedMessageViewModel item, boolean empty){
+            protected void updateItem(DecryptedMessageViewModel item, boolean empty) {
                 super.updateItem(item, empty);
-                if(empty || item == null){
+
+                if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
                     return;
                 }
+
                 Label textLabel = new Label(item.getPlaintext());
                 textLabel.setWrapText(true);
 
@@ -86,7 +90,7 @@ public class ConversationController {
         });
     }
 
-    public void setOtherUsersUsername(String otherUsersUsername){
+    public void setOtherUsersUsername(String otherUsersUsername) {
         this.otherUsersUsername = otherUsersUsername;
         conversationTitleLabel.setText("Conversation with " + otherUsersUsername);
         loadConversation();
@@ -94,7 +98,7 @@ public class ConversationController {
 
     @FXML
     public void onBackClick() {
-        try{
+        try {
             FXMLLoader loader = new FXMLLoader(
                     MessageE2EApplication.class.getResource("/is/hi/messagee2efront/ui/inbox-view.fxml"));
 
@@ -102,7 +106,7 @@ public class ConversationController {
             Stage stage = (Stage) messageListView.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Inbox");
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             statusLabel.setText("Could not load inbox page.");
         }
@@ -117,71 +121,95 @@ public class ConversationController {
     public void onSendClick() {
         String plaintext = messageInputField.getText();
 
-        if(plaintext == null || plaintext.isBlank()){
+        if (plaintext == null || plaintext.isBlank()) {
             statusLabel.setText("Message cannot be empty");
             return;
         }
+
         sendButton.setDisable(true);
         statusLabel.setText("Sending message...");
 
         new Thread(() -> {
             try {
-                PublicKeyResponse publicKeyResponse = messageService.getPublicKey(otherUsersUsername);
-                PublicKey recipientPublicKey = cryptoService.parsePublicKey(publicKeyResponse.getPublicKey());
+                String currentUsername = SessionStorage.getUsername();
+
+                PublicKeyResponse receiverKeyResponse = messageService.getPublicKey(otherUsersUsername);
+                PublicKey receiverPublicKey = cryptoService.parsePublicKey(receiverKeyResponse.getPublicKey());
+
+                PublicKeyResponse senderKeyResponse = messageService.getPublicKey(currentUsername);
+                PublicKey senderPublicKey = cryptoService.parsePublicKey(senderKeyResponse.getPublicKey());
+
                 SecretKey aesKey = cryptoService.generateAesKey();
                 byte[] iv = cryptoService.generateIv();
 
                 String ciphertext = cryptoService.encryptPlainText(plaintext, aesKey, iv);
-                String encryptedAesKey = cryptoService.encryptAesKey(aesKey, recipientPublicKey);
+                String encryptedAesKeyForReceiver = cryptoService.encryptAesKey(aesKey, receiverPublicKey);
+                String encryptedAesKeyForSender = cryptoService.encryptAesKey(aesKey, senderPublicKey);
                 String ivBase64 = cryptoService.encodeBase64(iv);
+
                 EncryptedMessagePayload payload = new EncryptedMessagePayload(
-                        encryptedAesKey,
+                        encryptedAesKeyForSender,
+                        encryptedAesKeyForReceiver,
                         ivBase64,
                         ciphertext
                 );
 
-                String payloadJson = objectMapper.writeValueAsString(payload);
-                SendMessageRequest request = new SendMessageRequest(otherUsersUsername, payloadJson);
+                SendMessageRequest request = new SendMessageRequest(
+                        otherUsersUsername,
+                        payload.getEncryptedAesKeyForSender(),
+                        payload.getEncryptedAesKeyForReceiver(),
+                        payload.getIv(),
+                        payload.getCiphertext()
+                );
 
                 messageService.sendMessage(request);
+
                 Platform.runLater(() -> {
                     messageInputField.clear();
                     sendButton.setDisable(false);
                     statusLabel.setText("Message sent.");
                     loadConversation();
                 });
-            } catch(Exception e){
+            } catch (Exception e) {
+                e.printStackTrace();
                 Platform.runLater(() -> {
                     sendButton.setDisable(false);
                     statusLabel.setText("Failed to send message.");
                 });
-                e.printStackTrace();
             }
         }).start();
     }
 
-    private void loadConversation(){
+    private void loadConversation() {
         statusLabel.setText("Loading conversation...");
 
         new Thread(() -> {
-            try{
+            try {
                 List<MessageResponse> messages = messageService.getConversation(otherUsersUsername);
                 List<DecryptedMessageViewModel> decryptedMessages = new ArrayList<>();
 
                 String currentUsername = SessionStorage.getUsername();
                 PrivateKey privateKey = SessionStorage.getPrivateKey();
 
-                for(MessageResponse message : messages){
+                for (MessageResponse message : messages) {
                     EncryptedMessagePayload payload = objectMapper.readValue(
                             message.getEncryptedContent(),
                             EncryptedMessagePayload.class
                     );
 
-                    SecretKey aesKey = cryptoService.decryptAesKey(payload.getEncryptedAesKey(), privateKey);
+                    boolean sentByCurrentUser = message.getSenderUsername().equals(currentUsername);
+
+                    String encryptedAesKeyToUse;
+                    if (sentByCurrentUser) {
+                        encryptedAesKeyToUse = payload.getEncryptedAesKeyForSender();
+                    } else {
+                        encryptedAesKeyToUse = payload.getEncryptedAesKeyForReceiver();
+                    }
+
+                    SecretKey aesKey = cryptoService.decryptAesKey(encryptedAesKeyToUse, privateKey);
                     byte[] iv = cryptoService.decodeBase64(payload.getIv());
                     String plaintext = cryptoService.decryptCipherText(payload.getCiphertext(), aesKey, iv);
 
-                    boolean sentByCurrentUser = message.getSenderUsername().equals(currentUsername);
                     decryptedMessages.add(new DecryptedMessageViewModel(
                             message.getSenderUsername(),
                             plaintext,
@@ -194,11 +222,13 @@ public class ConversationController {
                     messageListView.setItems(FXCollections.observableArrayList(decryptedMessages));
                     statusLabel.setText("Loaded " + messages.size() + " messages.");
                 });
-            }catch (Exception e){
+            } catch (Exception e) {
+                e.printStackTrace();
                 Platform.runLater(() -> statusLabel.setText("Failed to load conversation."));
             }
         }).start();
     }
+
     private String formatSentAt(String sentAt) {
         LocalDateTime dateTime = LocalDateTime.parse(sentAt);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM HH:mm");

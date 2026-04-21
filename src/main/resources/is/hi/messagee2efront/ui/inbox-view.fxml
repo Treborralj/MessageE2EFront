@@ -5,6 +5,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.TextField?>
 <VBox spacing="10"
       xmlns:fx="http://javafx.com/fxml/1"
       xmlns="http://javafx.com/javafx/21"
@@ -20,6 +21,8 @@
         <Button fx:id="refreshButton" text="Refresh" onAction="#onRefreshClick"/>
         <Button text="Open conversation" onAction="#onOpenConversationClick"/>
         <Button text="Logout" onAction="#onLogoutClick"/>
+        <TextField fx:id="newConversationUsernameField" promptText="Enter username" />
+        <Button text="New conversation" onAction="#onNewConversationClick" />
     </HBox>
 
     <ListView fx:id="inboxListView" prefHeight="400.0"/>

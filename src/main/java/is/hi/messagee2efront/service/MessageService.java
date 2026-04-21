@@ -79,7 +79,16 @@ public class MessageService {
 
     public void sendMessage(SendMessageRequest requestBodyObject) throws IOException, InterruptedException{
         String token = TokenStorage.getToken();
+
+        if (token == null || token.isBlank()) {
+            throw new RuntimeException("No JWT token found. User is not logged in.");
+        }
+
+
         String requestBody = objectMapper.writeValueAsString(requestBodyObject);
+        System.out.println("JWT token: " + token);
+        System.out.println("Send message URL: " + ApiClient.getBaseUrl() + "/message/send");
+        System.out.println("Request body: " + requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(ApiClient.getBaseUrl() + "/message/send"))
@@ -93,6 +102,8 @@ public class MessageService {
 
         HttpResponse<String> response = ApiClient.getHttpClient()
                 .send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        System.out.println("Send message response status: " + response.statusCode());
+        System.out.println("Send message response body: " + response.body());
 
         if(response.statusCode() != 200){
             throw new RuntimeException("Sending message failed. Status code: " + response.statusCode());
