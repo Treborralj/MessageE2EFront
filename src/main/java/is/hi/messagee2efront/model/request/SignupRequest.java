@@ -2,8 +2,8 @@ package is.hi.messagee2efront.model.request;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Request object sent to the backend during signup.
  *
  *****************************************************************************/
 public class SignupRequest {

@@ -5,8 +5,8 @@ import java.time.Duration;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Provides shared HTTP client configuration and backend API settings.
  *
  *****************************************************************************/
 public class ApiClient {
@@ -18,10 +18,17 @@ public class ApiClient {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    /**
+     * Returns the base URL of the backend API.
+     */
     public static String getBaseUrl(){
         return BASE_URL;
     }
 
+    /**
+     * Returns the shared HTTP client used for backend requests.
+     * @return
+     */
     public static HttpClient getHttpClient(){
         return httpClient;
     }

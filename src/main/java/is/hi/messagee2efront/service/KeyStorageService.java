@@ -10,16 +10,15 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.KeyFactory;
-import java.util.Base64;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Stores and retrieves encrypted private keys ont the client device.
  *
  *****************************************************************************/
 public class KeyStorageService {
@@ -29,7 +28,13 @@ public class KeyStorageService {
     private static final int AES_KEY_LENGTH = 128;
     private static final int GCM_TAG_LENGTH = 128;
 
-    public void savePrivateKey(String username, String password, PrivateKey privateKey){
+    /**
+     * Encrypts and stores a user's private key on local storage.
+     * @param username the username associated with the private key
+     * @param password the password used to derive the encryption key
+     * @param privateKey the private key to store
+     */
+    public void savePrivateKey(String username, String password, PrivateKey privateKey) {
         try {
             byte[] salt = randomBytes(SALT_LENGTH);
             byte[] iv = randomBytes(IV_LENGTH);
@@ -57,6 +62,12 @@ public class KeyStorageService {
         }
     }
 
+    /**
+     * Loads and decrypts a user's private key from local storage.
+     * @param username the username associated with the private key
+     * @param password the password used to derive the decryption key
+     * @return the decrypted private key
+     */
     public PrivateKey loadPrivateKey(String username, String password) {
         try {
             Path filePath = getPrivateKeyPath(username);
@@ -90,6 +101,13 @@ public class KeyStorageService {
         }
     }
 
+    /**
+     * Derive a symmetric key from the user's password and salt.
+     * @param password the password used for key derivation
+     * @param salt the salt used during key derivation
+     * @return the derived secret key
+     * @throws Exception if key derivation fails
+     */
     private SecretKey deriveKey(String password, byte[] salt) throws Exception {
         PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATIONS, AES_KEY_LENGTH);
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
@@ -97,12 +115,17 @@ public class KeyStorageService {
         return new SecretKeySpec(keyBytes, "AES");
     }
 
+    /**
+     * Generates securely random bytes of the requested length
+     */
     private byte[] randomBytes(int length) {
         byte[] bytes = new byte[length];
         new SecureRandom().nextBytes(bytes);
         return bytes;
     }
-
+    /**
+     * Returns the file path used to store the specified user's private key.
+     */
     private Path getPrivateKeyPath(String username) throws IOException {
         Path appDir = Path.of(System.getProperty("user.home"), ".messagee2e", "keys");
         return appDir.resolve(username + "_private.key");

@@ -20,8 +20,8 @@ import java.util.List;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Controls the inbox view and displays conversation summaries.
  *
  *****************************************************************************/
 public class InboxController {
@@ -37,33 +37,36 @@ public class InboxController {
     public TextField newConversationUsernameField;
     private final MessageService messageService = new MessageService();
 
+    /**
+     * Initializes the inbox view and configures the conversation list.
+     */
     @FXML
-    public void initialize(){
-        inboxListView.setCellFactory(listView -> new ListCell<>(){
+    public void initialize() {
+        inboxListView.setCellFactory(listView -> new ListCell<>() {
             @Override
-            protected void updateItem(ConversationSummaryResponse item, boolean empty){
+            protected void updateItem(ConversationSummaryResponse item, boolean empty) {
                 super.updateItem(item, empty);
 
-                if (empty || item == null){
+                if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
                     return;
                 }
 
                 String firstLine;
-                if(item.getUnreadCount() > 0){
+                if (item.getUnreadCount() > 0) {
                     firstLine = item.getUnreadCount() + " new messages from " + item.getOtherUsersUsername();
-                } else{
-                  firstLine = "0 new messages from " + item.getOtherUsersUsername();
+                } else {
+                    firstLine = "0 new messages from " + item.getOtherUsersUsername();
                 }
 
                 Label title = new Label(firstLine);
-                if(item.getUnreadCount() > 0){
-                   title.setStyle("-fx-font-weight: bold;");
+                if (item.getUnreadCount() > 0) {
+                    title.setStyle("-fx-font-weight: bold;");
                 }
 
                 String timeText = "";
-                if(item.getLastMessageSentAt() != null && !item.getLastMessageSentAt().isBlank()){
+                if (item.getLastMessageSentAt() != null && !item.getLastMessageSentAt().isBlank()) {
                     timeText = "Last activity: " + formatSentAt(item.getLastMessageSentAt());
                 }
 
@@ -79,9 +82,9 @@ public class InboxController {
         });
 
         inboxListView.setOnMouseClicked(event -> {
-            if(event.getClickCount() == 2){
+            if (event.getClickCount() == 2) {
                 ConversationSummaryResponse selected = inboxListView.getSelectionModel().getSelectedItem();
-                if(selected != null){
+                if (selected != null) {
                     openConversationPage(selected.getOtherUsersUsername());
                 }
             }
@@ -89,53 +92,65 @@ public class InboxController {
         loadConversationSummaries();
     }
 
+    /**
+     * Reloads the conversation summaries from the backend.
+     */
     @FXML
     public void onRefreshClick() {
         loadConversationSummaries();
     }
 
+    /**
+     * Opens the currently selected conversation.
+     */
     @FXML
-    public void onOpenConversationClick(){
+    public void onOpenConversationClick() {
         ConversationSummaryResponse selected = inboxListView.getSelectionModel().getSelectedItem();
-        if(selected != null){
+        if (selected != null) {
             openConversationPage(selected.getOtherUsersUsername());
-        } else{
+        } else {
             statusLabel.setText("Please select a conversation.");
         }
     }
 
+    /**
+     * Logs out the current user and returns to the login page.
+     */
     @FXML
     public void onLogoutClick() {
         TokenStorage.setToken(null);
         SessionStorage.clear();
 
-        try{
+        try {
             FXMLLoader loader = new FXMLLoader(
                     MessageE2EApplication.class.getResource("/is/hi/messagee2efront/ui/login-view.fxml"));
             Scene scene = new Scene(loader.load(), 320, 280);
             Stage stage = (Stage) inboxListView.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Login");
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             statusLabel.setText("Could not load login page.");
         }
     }
 
-    private void loadConversationSummaries(){
+    /**
+     * Loads conversation summaries from the backend and updates the UI.
+     */
+    private void loadConversationSummaries() {
         refreshButton.setDisable(true);
         statusLabel.setText("Loading inbox...");
 
         new Thread(() -> {
-            try{
-               List<ConversationSummaryResponse> conversations = messageService.getConversationSummaries();
+            try {
+                List<ConversationSummaryResponse> conversations = messageService.getConversationSummaries();
 
                 Platform.runLater(() -> {
                     inboxListView.setItems(FXCollections.observableArrayList(conversations));
                     statusLabel.setText("Loaded " + conversations.size() + " conversations");
                     refreshButton.setDisable(false);
                 });
-            } catch (Exception e){
+            } catch (Exception e) {
                 Platform.runLater(() -> {
                     statusLabel.setText("Failed to load inbox");
                     refreshButton.setDisable(false);
@@ -145,8 +160,12 @@ public class InboxController {
         }).start();
     }
 
-    private void openConversationPage(String username){
-        try{
+    /**
+     * Opens the conversation page with the specified user.
+     * @param username the username of the other conversation participant
+     */
+    private void openConversationPage(String username) {
+        try {
             FXMLLoader loader = new FXMLLoader(
                     MessageE2EApplication.class.getResource("/is/hi/messagee2efront/ui/conversation-view.fxml"));
             Scene scene = new Scene(loader.load(), 600, 500);
@@ -156,32 +175,64 @@ public class InboxController {
 
             Stage stage = (Stage) inboxListView.getScene().getWindow();
             stage.setScene(scene);
-            stage.setTitle("Conversation with " +  username);
-        } catch(Exception e){
+            stage.setTitle("Conversation with " + username);
+        } catch (Exception e) {
             e.printStackTrace();
             statusLabel.setText("Could not open conversation.");
         }
     }
 
+    /**
+     * Opens a new conversation with the user with the entered username.
+     */
     public void onNewConversationClick() {
         String username = newConversationUsernameField.getText();
 
-        if(username == null || username.isBlank()){
+        if (username == null || username.isBlank()) {
             statusLabel.setText("You must enter a username");
             return;
         }
 
         username = username.trim();
 
-        if(username.equals(SessionStorage.getUsername())){
+        if (username.equals(SessionStorage.getUsername())) {
             statusLabel.setText("You can not start send yourself a message.");
             return;
         }
 
-        newConversationUsernameField.clear();
-        openConversationPage(username);
+        refreshButton.setDisable(true);
+        newConversationUsernameField.setDisable(true);
+        statusLabel.setText("Checking for user...");
+
+        String finalUsername = username;
+
+        new Thread(() -> {
+            try{
+                messageService.getPublicKey(finalUsername);
+
+                Platform.runLater(() -> {
+                    newConversationUsernameField.clear();
+                    newConversationUsernameField.setDisable(false);
+                    refreshButton.setDisable(false);
+                    statusLabel.setText("");
+                    openConversationPage(finalUsername);
+                });
+            } catch (Exception e){
+                Platform.runLater(() -> {
+                    newConversationUsernameField.setDisable(false);
+                    refreshButton.setDisable(false);
+                    statusLabel.setText("User does not exist.");
+                });
+            }
+
+        }).start();
     }
 
+    /**
+     * Formats a message timestamp for display in the inbox UI.
+     * @param sentAt the raw timestamp string
+     * @return the formatted timestamp string
+     */
     private String formatSentAt(String sentAt) {
         LocalDateTime dateTime = LocalDateTime.parse(sentAt);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM HH:mm");

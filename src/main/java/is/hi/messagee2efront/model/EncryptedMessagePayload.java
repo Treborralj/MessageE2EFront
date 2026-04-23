@@ -2,8 +2,10 @@ package is.hi.messagee2efront.model;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Represents the encrypted payload of a message on the client side.
+ * Contains the encrypted AES keys for both sender and receiver, the initialization
+ * vector and the encrypted message.
  *
  *****************************************************************************/
 public class EncryptedMessagePayload {

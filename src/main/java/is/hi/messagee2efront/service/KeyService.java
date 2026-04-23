@@ -7,21 +7,31 @@ import java.util.Base64;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Handles RSA key pair generation and public key conversion.
  *
  *****************************************************************************/
 public class KeyService {
-    public KeyPair generateRsaKeyPair(){
-        try{
+    /**
+     * Generate a new RSA key pair for a user.
+     * @return a newly generated RSA key pair.
+     */
+    public KeyPair generateRsaKeyPair() {
+        try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(2048);
             return keyPairGenerator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e){
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Could not generate RSA key pair", e);
         }
     }
-    public String publicKeyToBase64(KeyPair keyPair){
+
+    /**
+     * Converts the public key from a KeyPair into Base64 format.
+     * @param keyPair the RSA key pair containing the public key
+     * @return the public key encoded as Base64
+     */
+    public String publicKeyToBase64(KeyPair keyPair) {
         return Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
     }
 }

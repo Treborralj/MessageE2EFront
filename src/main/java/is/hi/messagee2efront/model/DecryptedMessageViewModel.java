@@ -2,8 +2,8 @@ package is.hi.messagee2efront.model;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: View model used to display decrypted messages in the conversation UI.
  *
  *****************************************************************************/
 public class DecryptedMessageViewModel {

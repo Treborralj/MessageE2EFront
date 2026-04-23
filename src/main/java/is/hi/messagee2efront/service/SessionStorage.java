@@ -4,8 +4,9 @@ import java.security.PrivateKey;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Stores temporary session information for the currently logged-in
+ *              user.
  *
  *****************************************************************************/
 public class SessionStorage {
@@ -28,7 +29,10 @@ public class SessionStorage {
         SessionStorage.privateKey = privateKey;
     }
 
-    public static void clear(){
+    /**
+     * Clears the stored session data.
+     */
+    public static void clear() {
         username = null;
         privateKey = null;
     }

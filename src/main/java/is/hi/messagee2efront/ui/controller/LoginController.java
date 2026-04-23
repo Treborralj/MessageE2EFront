@@ -16,7 +16,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-
+/******************************************************************************
+ * @author Róbert A. Jack
+ * e-mail: ral9@hi.is
+ * Description: Controls the login view and hanles user authentication input.
+ *
+ *****************************************************************************/
 public class LoginController {
     @FXML
     public TextField usernameField;
@@ -29,12 +34,15 @@ public class LoginController {
     public Button loginButton;
     private final KeyStorageService keyStorageService = new KeyStorageService();
 
+    /**
+     * Attempts to authenticate the user and open the inbox view.
+     */
     @FXML
     protected void onLoginClick() {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        if(username == null || username.isBlank() || password == null || password.isBlank()){
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
             statusLabel.setText("Username and password must not be empty.");
             return;
         }
@@ -42,7 +50,7 @@ public class LoginController {
         statusLabel.setText("Logging in...");
 
         new Thread(() -> {
-            try{
+            try {
                 LoginRequest request = new LoginRequest(username, password);
                 AuthenticationResponse response = authService.login(request);
                 System.out.println("Token: " + response.getToken());
@@ -55,7 +63,7 @@ public class LoginController {
                     goToInboxPage();
                 });
 
-            } catch (Exception e){
+            } catch (Exception e) {
                 Platform.runLater(() -> {
                     statusLabel.setText("Login failed.");
                     loginButton.setDisable(false);
@@ -66,32 +74,38 @@ public class LoginController {
 
     }
 
+    /**
+     * Opens the signup page.
+     */
     @FXML
     protected void onGoToSignupClick() {
-        try{
+        try {
             FXMLLoader loader = new FXMLLoader(
                     MessageE2EApplication.class.getResource("/is/hi/messagee2efront/ui/signup-view.fxml"));
-            Scene scene = new Scene(loader.load(), 320, 280);
+            Scene scene = new Scene(loader.load(), 500, 280);
 
             Stage stage = (Stage) loginButton.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Sign up");
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             statusLabel.setText("Could not load signup page");
         }
     }
 
+    /**
+     * Opens the inbox page.
+     */
     @FXML
-    private void goToInboxPage(){
-        try{
-            FXMLLoader  loader = new FXMLLoader(
+    private void goToInboxPage() {
+        try {
+            FXMLLoader loader = new FXMLLoader(
                     MessageE2EApplication.class.getResource("/is/hi/messagee2efront/ui/inbox-view.fxml"));
-            Scene scene = new Scene(loader.load(), 500, 500);
+            Scene scene = new Scene(loader.load(), 600, 500);
             Stage stage = (Stage) loginButton.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Inbox");
-        } catch (Exception e){
+        } catch (Exception e) {
             statusLabel.setText("Could not load inbox page.");
         }
     }

@@ -30,8 +30,8 @@ import java.util.List;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description:
  *
  *****************************************************************************/
 public class ConversationController {
@@ -52,6 +52,9 @@ public class ConversationController {
 
     private String otherUsersUsername;
 
+    /**
+     * Initializes the conversation view and configures the message list.
+     */
     @FXML
     public void initialize() {
         messageListView.setCellFactory(listView -> new ListCell<>() {
@@ -90,19 +93,26 @@ public class ConversationController {
         });
     }
 
+    /**
+     * Sets the username of the other conversation participant.
+     * @param otherUsersUsername the username of the other participant
+     */
     public void setOtherUsersUsername(String otherUsersUsername) {
         this.otherUsersUsername = otherUsersUsername;
         conversationTitleLabel.setText("Conversation with " + otherUsersUsername);
         loadConversation();
     }
 
+    /**
+     * Returns to the inbox view.
+     */
     @FXML
     public void onBackClick() {
         try {
             FXMLLoader loader = new FXMLLoader(
                     MessageE2EApplication.class.getResource("/is/hi/messagee2efront/ui/inbox-view.fxml"));
 
-            Scene scene = new Scene(loader.load(), 500, 500);
+            Scene scene = new Scene(loader.load(), 600, 500);
             Stage stage = (Stage) messageListView.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Inbox");
@@ -112,11 +122,17 @@ public class ConversationController {
         }
     }
 
+    /**
+     * Reloads the current conversation.
+     */
     @FXML
     public void onRefreshClick() {
         loadConversation();
     }
 
+    /**
+     * Encrypts and sends a message to the current conversation partner.
+     */
     @FXML
     public void onSendClick() {
         String plaintext = messageInputField.getText();
@@ -180,6 +196,10 @@ public class ConversationController {
         }).start();
     }
 
+    /**
+     * Loads encrypted messages from the backend, decrypts them and updates the UI
+     * showing the messages decrypted.
+     */
     private void loadConversation() {
         statusLabel.setText("Loading conversation...");
 
@@ -229,6 +249,11 @@ public class ConversationController {
         }).start();
     }
 
+    /**
+     * Formats a message timestamp for display in the conversation UI.
+     * @param sentAt the raw timestamp string
+     * @return the formatted timestamp string
+     */
     private String formatSentAt(String sentAt) {
         LocalDateTime dateTime = LocalDateTime.parse(sentAt);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM HH:mm");

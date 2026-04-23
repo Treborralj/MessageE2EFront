@@ -2,8 +2,8 @@ package is.hi.messagee2efront.service;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Stores the JWT token used for authenticated backend requests.
  *
  *****************************************************************************/
 public class TokenStorage {
@@ -17,6 +17,9 @@ public class TokenStorage {
         return token;
     }
 
+    /**
+     * Removes the stored authentication token.
+     */
     public static void clearToken() {
         token = null;
     }

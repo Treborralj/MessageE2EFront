@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import is.hi.messagee2efront.model.request.LoginRequest;
 import is.hi.messagee2efront.model.request.SignupRequest;
 import is.hi.messagee2efront.model.response.AuthenticationResponse;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -12,13 +11,21 @@ import java.net.http.HttpResponse;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Handles authentication requests between the JaveFX client and
+ * the backend.
  *
  *****************************************************************************/
 public class AuthService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Sends a login request to the backend.
+     * @param loginRequest the login credentials
+     * @return the authentication response containing the JWT token
+     * @throws IOException if the request fails during communication
+     * @throws InterruptedException if the request is interrupted
+     */
     public AuthenticationResponse login(LoginRequest loginRequest) throws IOException, InterruptedException{
         String requestBody = objectMapper.writeValueAsString(loginRequest);
 
@@ -40,6 +47,13 @@ public class AuthService {
             + ", body: " + response.body());
         }
     }
+
+    /**
+     * Sends a signup request to the backend.
+     * @param signupRequest the signup data
+     * @throws IOException if the request fails during communication
+     * @throws InterruptedException if the request is interrupted
+     */
     public void signup(SignupRequest signupRequest) throws IOException, InterruptedException {
         String requestBody = objectMapper.writeValueAsString(signupRequest);
 

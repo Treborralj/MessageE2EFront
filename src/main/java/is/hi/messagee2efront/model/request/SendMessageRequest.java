@@ -4,8 +4,8 @@ import is.hi.messagee2efront.model.EncryptedMessagePayload;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Request object sent to the backend when sending a message.
  *
  *****************************************************************************/
 public class SendMessageRequest {

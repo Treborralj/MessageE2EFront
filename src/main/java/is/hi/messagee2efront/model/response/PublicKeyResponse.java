@@ -2,8 +2,8 @@ package is.hi.messagee2efront.model.response;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Response object returned after requesting for a user's public key.
  *
  *****************************************************************************/
 public class PublicKeyResponse {

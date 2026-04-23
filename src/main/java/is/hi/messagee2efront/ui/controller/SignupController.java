@@ -19,8 +19,8 @@ import java.security.KeyPair;
 
 /******************************************************************************
  * @author Róbert A. Jack
- * Tölvupóstur: ral9@hi.is
- * Lýsing : 
+ * e-mail: ral9@hi.is
+ * Description: Controls the signup view and handles new account creation.
  *
  *****************************************************************************/
 public class SignupController {
@@ -39,28 +39,37 @@ public class SignupController {
     private final KeyService keyService = new KeyService();
     private final KeyStorageService keyStorageService = new KeyStorageService();
 
+    /**
+     * Creates a new account, generates the user's key pair, and sends the signup request.
+     */
     @FXML
     protected void onSignupClick() {
         String username = usernameField.getText();
         String password = passwordField.getText();
         String confirmPassword = confirmPasswordField.getText();
 
-        if(username == null || username.isBlank()
+        if (username == null || username.isBlank()
                 || password == null || password.isBlank()
-                || confirmPassword == null || confirmPassword.isBlank()){
+                || confirmPassword == null || confirmPassword.isBlank()) {
             statusLabel.setText("All fields must be filled");
             return;
         }
 
-        if(!password.equals(confirmPassword)){
+        if (!password.equals(confirmPassword)) {
             statusLabel.setText("Passwords do not match");
             return;
         }
+
+        if(!validPassword(password)){
+            statusLabel.setText("Password must be at least 8 characters, include a capital letter and a symbol.");
+            return;
+        }
+
         signupButton.setDisable(true);
         statusLabel.setText("Creating account...");
 
         new Thread(() -> {
-            try{
+            try {
                 KeyPair keyPair = keyService.generateRsaKeyPair();
                 keyStorageService.savePrivateKey(username, password, keyPair.getPrivate());
                 String publicKeyBase64 = keyService.publicKeyToBase64(keyPair);
@@ -73,7 +82,7 @@ public class SignupController {
                     signupButton.setDisable(false);
                     goToLoginPage();
                 });
-            } catch(Exception e){
+            } catch (Exception e) {
                 Platform.runLater(() -> {
                     statusLabel.setText("Signup failed.");
                     signupButton.setDisable(false);
@@ -83,13 +92,19 @@ public class SignupController {
         }).start();
     }
 
+    /**
+     * Returns to the login page.
+     */
     @FXML
     public void onBackToLoginClick() {
         goToLoginPage();
     }
 
-    private void goToLoginPage(){
-        try{
+    /**
+     * Navigates to the login page.
+     */
+    private void goToLoginPage() {
+        try {
             FXMLLoader loader = new FXMLLoader(MessageE2EApplication.class.getResource(
                     "/is/hi/messagee2efront/ui/login-view.fxml"));
             Scene scene = new Scene(loader.load(), 320, 280);
@@ -97,9 +112,24 @@ public class SignupController {
             Stage stage = (Stage) signupButton.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle("Login");
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             statusLabel.setText("Could not load login page.");
         }
+    }
+
+    /**
+     * Validates whether a password meets security requirements.
+     * @param password the password to validate
+     * @return true if the password is good, otherwise false
+     */
+    private boolean validPassword(String password){
+        if(password.length() < 8){
+            return  false;
+        }
+        boolean hasUppercase = password.matches(".*[A-Z].*");
+        boolean hasSymbol = password.matches(".*[^a-zA-Z0-9].*");
+
+        return hasUppercase && hasSymbol;
     }
 }
